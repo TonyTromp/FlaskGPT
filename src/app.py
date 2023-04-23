@@ -18,12 +18,13 @@ def index():
 def send_report(path):
     return send_from_directory('img', path)
 
+# We store our history
+messages = []
+
 @app.route('/gpt', methods=['GET', 'POST'])
 def gpt():
     user_input = request.args.get('user_input') if request.method == 'GET' else request.form['user_input']
-    messages = [
-        {"role": "user", "content": user_input}
-    ]
+    messages.append({"role": "user", "content": user_input})
 
     try:
         response = openai.ChatCompletion.create(
@@ -31,6 +32,7 @@ def gpt():
             messages=messages
         )
         content = response.choices[0].message["content"]
+        messages.append({"role": "assistant", "content": content})
     except RateLimitError:
         content = "The server is experiencing a high volume of requests. Please try again later."
 
