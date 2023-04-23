@@ -101,7 +101,6 @@
   .messages li:before {
     content: '';
     flex: 1;
-/*    background: white; */
     background:  #f8f8f8;
     pointer-events: none;
   }
@@ -127,7 +126,7 @@
   
   .messages li.mine span {
     background: none;
-    color: white;
+/*    color: white; */
   }
   
     
