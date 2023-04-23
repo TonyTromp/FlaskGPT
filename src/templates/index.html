@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GPT API Chat - model {{model}}</title>
+    <link rel="stylesheet" href="/css/chat-style.css">
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
  
     <style>
@@ -25,7 +27,7 @@
         border-radius: 5px;
         padding: 20px;
         width: 80%;
-        max-width: 600px;
+        max-width: 800px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
       }
 
@@ -114,7 +116,18 @@
         
 
     <table width="100%">
-    <form id="chat-form" target="#" method="post">
+    <form id="chat-form">
+    <tr>
+      <td colspan="3">
+        <div id="result">
+        <ol class="messages" id="chat_history">
+          <li class="mine"><span>Use the text-input below</span></li>
+          <li><span>To start chatting.</span></li>
+        </ol>    
+      </div>
+      </td>
+    </tr>
+
     <tr>
       <td width="*"><input style="width: 100%;" type="text" id="user-input" name="user_input" placeholder="Type your message or use the microphone as input..." /></td>
       <td width="10">
@@ -124,9 +137,6 @@
        </span>        
       </td>
       <td align="right" width="20"><button style="text-align: right" type="submit" id="submitBtn">Send</button></td>
-    </tr>
-    <tr>
-      <td colspan="3"><div id="result"></div></td>
     </tr>
     <tr>
       <td colspan="2">&#128264; Enable text-to-speech (Chrome)</td>
@@ -139,7 +149,6 @@
     </tr>
     </form>
     </table>
-    
 
   </div>
 
@@ -160,31 +169,51 @@
         }
       }
 
+      function add_chathistory(message, className) {
+        ol_elem=document.getElementById('chat_history');
+        li=document.createElement('li');
+        li.className=className;
+        span=document.createElement('span');
+        span.innerHTML=message;
+
+        li.appendChild(span);            
+        ol_elem.appendChild(li);
+      }
+
+
       window.onload = function () {
         document
           .getElementById("chat-form")
           .addEventListener("submit", function (event) {
-            // grey button
-            document.getElementById('submitBtn').className='submitBtn-grey';
-
             // Prevent the form from submitting and refreshing the page
             event.preventDefault();
+            // grey button
+            //document.getElementById('submitBtn').className='submitBtn-grey';
+
 
             let userInput = document.getElementById("user-input").value;
             let url = `/gpt?user_input=${encodeURIComponent(userInput)}`;
+
+            add_chathistory(userInput,'mine');
 
             fetch(url)
               .then((response) => response.json())
               .then((data) => {
                 let content = data.content;
                 let resultDiv = document.getElementById("result");
-                resultDiv.innerHTML = content;
+
+                add_chathistory(content,'');
+
+                //Scroll window
+                var elem = document.getElementById('chat_history');
+                elem.scrollTop = elem.scrollHeight;
 
                 if (isTTSenabled()) {
-                  console.log('TTS Enabled');
                   TTS(content);
                 }
-                document.getElementById('submitBtn').className='submitBtn';
+                
+                document.getElementById("user-input").value=''
+                document.getElementById("user-input").focus();         
 
               })
               .catch((error) => {

@@ -10,13 +10,20 @@ gpt_model="gpt-4"
 gpt_model="gpt-3.5-turbo-0301"
 #gpt_model="gpt-3.5-turbo"
 
+# /:default
 @app.route('/')
 def index():
     return render_template('index.html', model=gpt_model)
 
+# /img:files
 @app.route('/img/<path:path>')
-def send_report(path):
+def path_img(path):
     return send_from_directory('img', path)
+
+# /css:files
+@app.route('/css/<path:path>')
+def path_css(path):
+    return send_from_directory('css', path)
 
 # We store our history
 messages = []
