@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPT API Chat - model {{model}}</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ 
+    <style>
+      @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css");
+
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .chat-container {
+        background-color: #ffffff;
+        border-radius: 5px;
+        padding: 20px;
+        width: 80%;
+        max-width: 600px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      #chat-form {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      #user-input {
+        flex-grow: 1;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+      }
+
+      #submitBtn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 15px;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+
+      #submitBtn:hover {
+        background-color: #45a049;
+      }
+
+      #result {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 20px;
+        background-color: #f8f8f8;
+        min-height: 100px;
+        overflow-wrap: break-word;
+      }
+
+      button.round {
+        background-color: #48abe0;
+        color: white;
+        border: none;
+        padding: 5px;
+        font-size: 20px;
+        height: 40px;
+        width: 40px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px darkslategray;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      button.round:hover {
+        background-color: #25739e;
+      }
+
+      button.round:active {
+        box-shadow: 0 0 2px darkslategray;
+        transform: translateY(2px);
+      }
+      #over img {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+      }
+
+      .tog {
+        cursor: pointer;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <h1>GPT API Chat</h1>
+        
+
+    <table width="100%">
+    <form id="chat-form" target="#" method="post">
+    <tr>
+      <td width="*"><input style="width: 100%;" type="text" id="user-input" name="user_input" placeholder="Type your message or use the microphone as input..." /></td>
+      <td width="10">
+        <span class="tog" id="mic_toggle">
+          <img src="/img/mic_0.png">
+          <img src="/img/mic_red.png" style="display:none;">
+       </span>        
+      </td>
+      <td align="right" width="20"><button style="text-align: right" type="submit" id="submitBtn">Send</button></td>
+    </tr>
+    <tr>
+      <td colspan="3"><div id="result"></div></td>
+    </tr>
+    <tr>
+      <td colspan="2">&#128264; Enable text-to-speech (Chrome)</td>
+      <td align="right">
+          <select id="enable_tts">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </select>
+      </td>
+    </tr>
+    </form>
+    </table>
+    
+
+  </div>
+
+    <script lanuage="Javascript">
+      // Speech Recognizion (using webkit)
+      var wsr = new webkitSpeechRecognition();
+      wsr_enabled = false;
+
+      var synthesis = false;
+
+      function toggle_wsr() {
+        wsr_enabled = !wsr_enabled;
+
+        if (wsr_enabled) {
+          wsr.start();
+        } else {
+          wsr.stop();
+        }
+      }
+
+      if (wsr) {
+        wsr.continuous = true;
+        wsr.interimResults = true;
+        wsr.lang = "US-EN";
+
+        wsr.onresult = function(event) {
+          console.log(event.resultIndex);
+          currentIndex=event.resultIndex;
+          if (event.results[currentIndex].isFinal) {
+            result=event.results[currentIndex][0].transcript;
+            console.log(result)
+            document.getElementById("user-input").value = result;
+
+            // disable/reset wsr after final recognized word
+            document.getElementById('mic_toggle').click();
+         
+          }
+        }
+
+        if (wsr_enabled) {
+          wsr.start();
+        }
+      }
+
+
+      window.onload = function () {
+        document
+          .getElementById("chat-form")
+          .addEventListener("submit", function (event) {
+            // Prevent the form from submitting and refreshing the page
+            event.preventDefault();
+
+            let userInput = document.getElementById("user-input").value;
+            let url = `/gpt?user_input=${encodeURIComponent(userInput)}`;
+
+            fetch(url)
+              .then((response) => response.json())
+              .then((data) => {
+                let content = data.content;
+                let resultDiv = document.getElementById("result");
+                resultDiv.innerHTML = content;
+
+                if (isTTSenabled()) {
+                  console.log('TTS Enabled');
+                  TTS(content);
+                }
+
+              })
+              .catch((error) => {
+                console.error("Error fetching GPT response:", error);
+              });
+          });
+
+          
+        // TTS using 
+        if ('speechSynthesis' in window) {
+          synthesis = window.speechSynthesis;
+        } else {
+          console.log('Text-to-speech not supported.');
+        }
+
+
+      };
+
+      function isTTSenabled() {
+        return eval(document.getElementById('enable_tts').value);
+      }
+
+
+      function TTS(message) {
+        if (synthesis) {
+          var utterance = new SpeechSynthesisUtterance(message);
+          //utterance.voice=speechSynthesis.getVoices().filter(function(voice) { 
+          //  return voice.name == "Google US English"; })[0];
+          synthesis.speak(utterance);
+        }
+      }
+      
+
+      $(".tog").click(function(){
+        $('img',this).toggle();
+        toggle_wsr();
+      });
+
+
+
+    </script>
+  </body>
+</html>
+
+
