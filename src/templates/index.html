@@ -61,6 +61,10 @@
         background-color: #45a049;
       }
 
+      #submitBtn-grey {
+        background-color: #757575;
+      }
+
       #result {
         border: 1px solid #ccc;
         border-radius: 5px;
@@ -141,7 +145,7 @@
 
     <script lanuage="Javascript">
       // Speech Recognizion (using webkit)
-      var wsr = new webkitSpeechRecognition();
+      var wsr = false;
       wsr_enabled = false;
 
       var synthesis = false;
@@ -156,35 +160,13 @@
         }
       }
 
-      if (wsr) {
-        wsr.continuous = true;
-        wsr.interimResults = true;
-        wsr.lang = "US-EN";
-
-        wsr.onresult = function(event) {
-          console.log(event.resultIndex);
-          currentIndex=event.resultIndex;
-          if (event.results[currentIndex].isFinal) {
-            result=event.results[currentIndex][0].transcript;
-            console.log(result)
-            document.getElementById("user-input").value = result;
-
-            // disable/reset wsr after final recognized word
-            document.getElementById('mic_toggle').click();
-         
-          }
-        }
-
-        if (wsr_enabled) {
-          wsr.start();
-        }
-      }
-
-
       window.onload = function () {
         document
           .getElementById("chat-form")
           .addEventListener("submit", function (event) {
+            // grey button
+            document.getElementById('submitBtn').className='submitBtn-grey';
+
             // Prevent the form from submitting and refreshing the page
             event.preventDefault();
 
@@ -202,15 +184,42 @@
                   console.log('TTS Enabled');
                   TTS(content);
                 }
+                document.getElementById('submitBtn').className='submitBtn';
 
               })
               .catch((error) => {
                 console.error("Error fetching GPT response:", error);
+                document.getElementById('submitBtn').className='submitBtn';
               });
           });
+        
+        // Speech Recognition using WebKit
+        wsr = new webkitSpeechRecognition();
+        if (wsr) {
+          wsr.continuous = true;
+          wsr.interimResults = true;
+          wsr.lang = "US-EN";
 
+          wsr.onresult = function(event) {
+            console.log(event.resultIndex);
+            currentIndex=event.resultIndex;
+            if (event.results[currentIndex].isFinal) {
+              result=event.results[currentIndex][0].transcript;
+              console.log(result)
+              document.getElementById("user-input").value = result;
+
+              // disable/reset wsr after final recognized word
+              document.getElementById('mic_toggle').click();
           
-        // TTS using 
+            }
+          }
+
+          if (wsr_enabled) {
+            wsr.start();
+          }
+        }          
+          
+        // Text-To-Speech using 
         if ('speechSynthesis' in window) {
           synthesis = window.speechSynthesis;
         } else {
@@ -227,10 +236,16 @@
 
       function TTS(message) {
         if (synthesis) {
-          var utterance = new SpeechSynthesisUtterance(message);
-          //utterance.voice=speechSynthesis.getVoices().filter(function(voice) { 
-          //  return voice.name == "Google US English"; })[0];
-          synthesis.speak(utterance);
+          // utterence has max amount of text, therefore we create a new utterence per line.
+          lines=message.split('.');
+          utterance='';
+          for (var i=0; i<(lines.length-1); i++) {
+            utterance = new SpeechSynthesisUtterance(lines[i]+'.');
+            utterance.voice=speechSynthesis.getVoices().filter(function(voice) { 
+              return voice.name == "Google US English"; })[0];
+            synthesis.speak(utterance);            
+          }
+
         }
       }
       
@@ -239,6 +254,12 @@
         $('img',this).toggle();
         toggle_wsr();
       });
+
+      $("submitBtn").click(function(){
+        $(this).toggleClass('submitBtn-grey');
+      });
+
+      
 
 
 

@@ -4,10 +4,20 @@ Based on the tutoriol following https://medium.com/codingthesmartway-com-blog/ho
 
 Added to this concept is Microphone input using Webkit and Text-To-Speech.
 
+# Running the easy way:
 
-# Building from Source code
+1. edit the docker-compose.yaml file and add your OPENAI_API_KEY
+2. build the docker image using:
+```
+docker-compose build
+```
+3. run the image using:
+```
+docker-compose up
+```
 
-## Create and activate Python virtual Env (using Python 3.9)
+## Development
+Create and activate Python virtual Env (using Python 3.9)
 ```
 # Linux
 py39=$(which python3.9)
@@ -23,4 +33,8 @@ pip install -r requirements.txt
 
 # SET OPENAI KEY
 export OPENAI_API_KEY="<MY_KEY>"
+
+# Run it
+cd src
+python app.py
 ```
