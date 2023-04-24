@@ -16,14 +16,10 @@ def index():
     return render_template('index.html', model=gpt_model)
 
 # /img:files
-@app.route('/img/<path:path>')
+@app.route('/resources/<path:path>')
 def path_img(path):
-    return send_from_directory('img', path)
+    return send_from_directory('resources', path)
 
-# /css:files
-@app.route('/css/<path:path>')
-def path_css(path):
-    return send_from_directory('css', path)
 
 # We store our history
 messages = []
@@ -31,7 +27,12 @@ messages = []
 @app.route('/gpt', methods=['GET', 'POST'])
 def gpt():
     user_input = request.args.get('user_input') if request.method == 'GET' else request.form['user_input']
-    messages.append({"role": "user", "content": user_input})
+    system_input = request.args.get('system_input') if request.method == 'GET' else request.form['system_input']
+
+    if user_input:
+        messages.append({"role": "user", "content": user_input})
+    if system_input:
+        messages.append({"role": "system", "content": system_input})
 
     try:
         response = openai.ChatCompletion.create(

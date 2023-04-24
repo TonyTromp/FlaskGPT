@@ -5,110 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GPT API Chat - model {{model}}</title>
-    <link rel="stylesheet" href="/css/chat-style.css">
-    
+    <link rel="stylesheet" href="/resources/css/chat-style.css">    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/resources/js/flaskgpt_client.js"></script>
  
-    <style>
-      @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css");
-
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-      }
-
-      .chat-container {
-        background-color: #ffffff;
-        border-radius: 5px;
-        padding: 20px;
-        width: 80%;
-        max-width: 800px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      }
-
-      h1 {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-
-      #chat-form {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-      }
-
-      #user-input {
-        flex-grow: 1;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        padding: 10px;
-      }
-
-      #submitBtn {
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        padding: 10px 15px;
-        margin-left: 10px;
-        cursor: pointer;
-      }
-
-      #submitBtn:hover {
-        background-color: #45a049;
-      }
-
-      #submitBtn-grey {
-        background-color: #757575;
-      }
-
-      #result {
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        padding: 20px;
-        background-color: #f8f8f8;
-        min-height: 100px;
-        overflow-wrap: break-word;
-      }
-
-      button.round {
-        background-color: #48abe0;
-        color: white;
-        border: none;
-        padding: 5px;
-        font-size: 20px;
-        height: 40px;
-        width: 40px;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px darkslategray;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      button.round:hover {
-        background-color: #25739e;
-      }
-
-      button.round:active {
-        box-shadow: 0 0 2px darkslategray;
-        transform: translateY(2px);
-      }
-      #over img {
-        margin-left: auto;
-        margin-right: auto;
-        display: block;
-      }
-
-      .tog {
-        cursor: pointer;
-      }
-
-    </style>
   </head>
   <body>
     <div class="chat-container">
@@ -133,8 +33,8 @@
       <td width="*"><input style="width: 100%;" type="text" id="user-input" name="user_input" placeholder="Type your message or use the microphone as input..." /></td>
       <td width="10">
         <span class="tog" id="mic_toggle">
-          <img src="/img/mic_0.png">
-          <img src="/img/mic_red.png" style="display:none;">
+          <img src="/resources/img/mic_0.png">
+          <img src="/resources/img/mic_red.png" style="display:none;">
        </span>        
       </td>
       <td align="right" width="20"><button style="text-align: right" type="submit" id="submitBtn">Send</button></td>
@@ -154,21 +54,37 @@
   </div>
 
     <script lanuage="Javascript">
-      // Speech Recognizion (using webkit)
-      var wsr = false;
       wsr_enabled = false;
 
-      var synthesis = false;
 
-      function toggle_wsr() {
-        wsr_enabled = !wsr_enabled;
 
-        if (wsr_enabled) {
-          wsr.start();
-        } else {
-          wsr.stop();
-        }
-      }
+      flask_gpt=new FlaskGPT();
+
+      window.onload = function () {
+        document.getElementById("chat-form").addEventListener("submit", function (event) {
+            // Prevent the form from submitting and refreshing the page
+            event.preventDefault();
+
+            let userInput = document.getElementById("user-input").value;
+            let url = `/gpt?user_input=${encodeURIComponent(userInput)}`;
+
+            add_chathistory(userInput,'mine');
+
+            flask_gpt.addUserInput(
+              document.getElementById("user-input").value,
+              function(obj) {
+                add_chathistory(obj.result,'');
+                document.getElementById("user-input").value=''
+                document.getElementById("user-input").focus();                
+                if (isTTSenabled()) {
+                  flask_gpt.textToSpeech(obj.result);
+                }
+              }
+            );
+
+          });
+                  
+      };
 
       function add_chathistory(message, className) {
         ol_elem=document.getElementById('chat_history');
@@ -179,104 +95,28 @@
 
         li.appendChild(span);            
         ol_elem.appendChild(li);
+
+        //Scroll content down
+        ol_elem.scrollTop = ol_elem.scrollHeight;        
       }
 
+      function toggle_wsr() {
+        wsr_enabled = !wsr_enabled;
 
-      window.onload = function () {
-        document
-          .getElementById("chat-form")
-          .addEventListener("submit", function (event) {
-            // Prevent the form from submitting and refreshing the page
-            event.preventDefault();
-            // grey button
-            //document.getElementById('submitBtn').className='submitBtn-grey';
-
-
-            let userInput = document.getElementById("user-input").value;
-            let url = `/gpt?user_input=${encodeURIComponent(userInput)}`;
-
-            add_chathistory(userInput,'mine');
-
-            fetch(url)
-              .then((response) => response.json())
-              .then((data) => {
-                let content = data.content;
-                let resultDiv = document.getElementById("result");
-
-                add_chathistory(content,'');
-
-                //Scroll window
-                var elem = document.getElementById('chat_history');
-                elem.scrollTop = elem.scrollHeight;
-
-                if (isTTSenabled()) {
-                  TTS(content);
-                }
-                
-                document.getElementById("user-input").value=''
-                document.getElementById("user-input").focus();         
-
-              })
-              .catch((error) => {
-                console.error("Error fetching GPT response:", error);
-                document.getElementById('submitBtn').className='submitBtn';
-              });
+        if (wsr_enabled) {
+          flask_gpt.speechToText(function(text){
+            document.getElementById("user-input").value = text;
+            // disable/reset mic toggle after input stopped
+            $(".tog").click();
           });
-        
-        // Speech Recognition using WebKit
-        wsr = new webkitSpeechRecognition();
-        if (wsr) {
-          wsr.continuous = true;
-          wsr.interimResults = true;
-          wsr.lang = "US-EN";
-
-          wsr.onresult = function(event) {
-            console.log(event.resultIndex);
-            currentIndex=event.resultIndex;
-            if (event.results[currentIndex].isFinal) {
-              result=event.results[currentIndex][0].transcript;
-              console.log(result)
-              document.getElementById("user-input").value = result;
-
-              // disable/reset wsr after final recognized word
-              document.getElementById('mic_toggle').click();
-          
-            }
-          }
-
-          if (wsr_enabled) {
-            wsr.start();
-          }
-        }          
-          
-        // Text-To-Speech using 
-        if ('speechSynthesis' in window) {
-          synthesis = window.speechSynthesis;
         } else {
-          console.log('Text-to-speech not supported.');
+          //wsr.stop();
+          null;
         }
-
-
-      };
+      }
 
       function isTTSenabled() {
         return eval(document.getElementById('enable_tts').value);
-      }
-
-
-      function TTS(message) {
-        if (synthesis) {
-          // utterence has max amount of text, therefore we create a new utterence per line.
-          lines=message.split('.');
-          utterance='';
-          for (var i=0; i<(lines.length-1); i++) {
-            utterance = new SpeechSynthesisUtterance(lines[i]+'.');
-            utterance.voice=speechSynthesis.getVoices().filter(function(voice) { 
-              return voice.name == "Google US English"; })[0];
-            synthesis.speak(utterance);            
-          }
-
-        }
       }
       
 
