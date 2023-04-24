@@ -1,5 +1,4 @@
-Screenshot
-![alt text](https://github.com/TonyTromp/FlaskGPT/blob/master/docs/screenshot.png?raw=true)
+![Screenshot](https://raw.githubusercontent.com/TonyTromp/FlaskGPT/main/docs/screenshot.png)
 
 
 # FlaskGPT template
