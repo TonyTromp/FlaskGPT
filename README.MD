@@ -1,3 +1,7 @@
+Screenshot
+![alt text](https://github.com/TonyTromp/FlaskGPT/blob/master/docs/screenshot.png?raw=true)
+
+
 # FlaskGPT template
 
 Based on the tutoriol following https://medium.com/codingthesmartway-com-blog/how-to-create-an-ai-powered-python-web-app-with-flask-and-gpt-4-api-907dcffd1221
