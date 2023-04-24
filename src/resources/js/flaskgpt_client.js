@@ -23,15 +23,27 @@ class FlaskGPT {
           });          
     }
 
+    addSystemInput(message, callback) {
+      let url = this.URL + `?system_input=${encodeURIComponent(message)}`;          
+      fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            let content = data.content;
+            callback({"result": content});
+          }).catch((error) => {
+            console.error("Error fetching GPT response:", error);
+          });          
+    }
+
     textToSpeech(message) {
       if (window.speechSynthesis) {
-        let utterance = new SpeechSynthesisUtterance();
-        utterance.voice = window.speechSynthesis.getVoices().filter( (voice)=>voice.name=="Google US English" )[0];
-
         var lines=message.split('.');
+        const speechVoice = window.speechSynthesis.getVoices().filter(  (voice) => voice.name=="Google US English" )[0];
+
         for (var i=0; i<(lines.length); i++) {
           if (lines[i].length>1) {
-            utterance.text = lines[i]+'.';
+            let utterance = new SpeechSynthesisUtterance(lines[i]+'.');
+            utterance.voice = speechVoice;
             window.speechSynthesis.speak(utterance);     
           }
         }
